@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Iterator
 
 import aiofiles as aiofiles
 import cdblib
@@ -41,7 +41,7 @@ class Config:
 
     def __contains__(self, key):
         """Return True if key exists in the config"""
-        return self.cdb.has_key(key)
+        return key in self.cdb
 
     def items(self) -> List[Tuple[bytes, bytes]]:
         """Get config (key, value) pairs"""
@@ -76,18 +76,13 @@ class Config:
         else:
             raise ValueError
 
-    def _flatten_dict(self, d: dict, path: str = '', output: list = None) -> list:
-        output = [] if output is None else output
-
-        for key in d.keys():
-            value = d[key]
+    def _flatten_dict(self, d: dict, path: str = '') -> Iterator[Tuple[str, str]]:
+        for key, value in d.items():
             _path = '/'.join((path, key))
             if isinstance(value, dict):
-                self._flatten_dict(value, _path, output)
+                yield from self._flatten_dict(value, _path)
             else:
-                output.append((_path, f's{value}'))
-
-        return output
+                yield _path, f's{value}'
 
     def fill_from_yaml(self, filename: str):
         """Read yaml file, convert parameters and save them to cdb file"""
