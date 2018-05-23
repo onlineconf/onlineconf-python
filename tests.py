@@ -5,6 +5,7 @@ import tempfile
 import json
 
 import cdblib
+import yaml
 
 from onlineconf import Config
 
@@ -113,6 +114,45 @@ class ReadConfig(unittest.TestCase):
         loop.run_until_complete(asyncio.sleep(conf._reload_interval + 1))
 
         self.assertEqual(conf.get(key), new_value)
+
+
+class ConvertYamlToCdb(unittest.TestCase):
+    cdb_writer = cdblib.Writer
+
+    def setUp(self):
+        _, self.cdb_filename = tempfile.mkstemp()
+        _, self.yaml_filename = tempfile.mkstemp()
+
+    def tearDown(self):
+        os.remove(self.cdb_filename)
+        os.remove(self.yaml_filename)
+
+    def test_fill_cdb_with_yaml(self):
+        conf = {
+            'service': {
+                'db': {
+                    'connection': {
+                        'host': 'localhost',
+                        'port': 5432
+                    },
+                    'pool_size': 10
+                },
+                'float': 5.35
+            }
+        }
+
+        with open(self.yaml_filename, 'w') as f:
+            f.write(yaml.dump(conf))
+
+        conf = Config(self.cdb_filename)
+        conf.fill_from_yaml(self.yaml_filename)
+
+        cdb_conf = Config.read(self.cdb_filename, reload=False)
+
+        self.assertEqual(cdb_conf.get('/service/db/connection/host'), 'localhost')
+        self.assertEqual(cdb_conf.get('/service/db/connection/port'), '5432')
+        self.assertEqual(cdb_conf.get('/service/db/pool_size'), '10')
+        self.assertEqual(cdb_conf.get('/service/float'), '5.35')
 
 
 if __name__ == '__main__':

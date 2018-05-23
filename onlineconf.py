@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 
 import aiofiles as aiofiles
 import cdblib
+import yaml
 
 __all__ = ('Config',)
 
@@ -74,3 +75,29 @@ class Config:
             return json.loads(value)
         else:
             raise ValueError
+
+    def _flatten_dict(self, d: dict, path: str = '', output: list = None) -> list:
+        output = [] if output is None else output
+
+        for key in d.keys():
+            value = d[key]
+            _path = '/'.join((path, key))
+            if isinstance(value, dict):
+                self._flatten_dict(value, _path, output)
+            else:
+                output.append((_path, f's{value}'))
+
+        return output
+
+    def fill_from_yaml(self, filename: str):
+        """Read yaml file, convert parameters and save them to cdb file"""
+        with open(filename) as f:
+            conf = yaml.load(f.read())
+
+        cdb_items = self._flatten_dict(conf)
+
+        with open(self._filename, 'wb') as f:
+            writer = cdblib.Writer(f)
+            for item in cdb_items:
+                writer.put(*item)
+            writer.finalize()
