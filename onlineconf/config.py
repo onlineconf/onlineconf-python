@@ -1,9 +1,10 @@
 import asyncio
 import json
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Iterator
 
 import aiofiles as aiofiles
 import cdblib
+import yaml
 
 __all__ = ('Config',)
 
@@ -40,7 +41,7 @@ class Config:
 
     def __contains__(self, key):
         """Return True if key exists in the config"""
-        return self.cdb.has_key(key)
+        return key in self.cdb
 
     def items(self) -> List[Tuple[bytes, bytes]]:
         """Get config (key, value) pairs"""
@@ -61,6 +62,19 @@ class Config:
             self.cdb = cdblib.Reader(_config)
             await asyncio.sleep(self._reload_interval)
 
+    def fill_from_yaml(self, filename: str):
+        """Read yaml file, convert parameters and save them to cdb file"""
+        with open(filename) as f:
+            conf = yaml.load(f.read())
+
+        cdb_items = self._flatten_dict(conf)
+
+        with open(self._filename, 'wb') as f:
+            writer = cdblib.Writer(f)
+            for item in cdb_items:
+                writer.put(*item)
+            writer.finalize()
+
     @staticmethod
     def _cast_value(value: str) -> Union[str, dict]:
         # Decode bytes to unicode
@@ -74,3 +88,12 @@ class Config:
             return json.loads(value)
         else:
             raise ValueError
+
+    def _flatten_dict(self, d: dict, path: str = '') -> Iterator[Tuple[str, str]]:
+        """Return dict items as tuples: (xpath-like key, value)"""
+        for key, value in d.items():
+            _path = '/'.join((path, key))
+            if isinstance(value, dict):
+                yield from self._flatten_dict(value, _path)
+            else:
+                yield _path, f's{value}'
