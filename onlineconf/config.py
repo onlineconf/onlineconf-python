@@ -96,4 +96,10 @@ class Config:
             if isinstance(value, dict):
                 yield from self._flatten_dict(value, _path)
             else:
-                yield _path, f's{value}'
+                try:
+                    json.loads(value)
+                except (TypeError, json.decoder.JSONDecodeError) as exc:
+                    yield _path, f's{value}'
+                else:
+                    yield _path, f'j{value}'
+

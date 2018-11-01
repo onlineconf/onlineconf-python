@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='onlineconf',
-    version='0.0.1',
+    version='0.0.2',
     url='https://gitlab.corp.mail.ru/myspb/common/onlineconf',
     author='mail.ru',
     packages=['onlineconf'],

@@ -1,3 +1,3 @@
 pure-cdb==2.0.1
 aiofiles==0.3.2
-PyYAML==3.12
+PyYAML==3.13
