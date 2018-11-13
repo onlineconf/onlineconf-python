@@ -29,7 +29,7 @@ class ReadConfig(unittest.TestCase):
     def test_read_string_value(self):
         key, value = '/my/service', '123'
 
-        self.writer.put(key, f's{value}')
+        self.writer.put(key.encode(), f's{value}'.encode())
         self.finalize_cdb()
 
         conf = Config.read(self.cdb_filename, reload=False)
@@ -41,7 +41,19 @@ class ReadConfig(unittest.TestCase):
     def test_read_json_value(self):
         key, value = '/my/service', dict(key='value')
 
-        self.writer.put(key, f'j{json.dumps(value)}')
+        self.writer.put(key.encode(), f'j{json.dumps(value)}'.encode())
+        self.finalize_cdb()
+
+        conf = Config.read(self.cdb_filename, reload=False)
+
+        saved_value = conf.get(key)
+        self.assertIsInstance(saved_value, dict)
+        self.assertEqual(saved_value, value)
+
+    def test_read_json_value_with_unicode(self):
+        key, value = '/my/service', dict(key='сьешь еще этих булочек')
+
+        self.writer.put(key.encode(), f'j{json.dumps(value)}'.encode())
         self.finalize_cdb()
 
         conf = Config.read(self.cdb_filename, reload=False)
@@ -52,9 +64,9 @@ class ReadConfig(unittest.TestCase):
 
     def test_get_items(self):
         items = [
-            ('/my/service/param1', 'value1'),
-            ('/my/service/param2', 'value2'),
-            ('/my/service/param3', 'value3'),
+            (b'/my/service/param1', b'value1'),
+            (b'/my/service/param2', b'value2'),
+            (b'/my/service/param3', b'value3'),
         ]
 
         for item in items:
@@ -64,13 +76,13 @@ class ReadConfig(unittest.TestCase):
         conf = Config.read(self.cdb_filename, reload=False)
         saved_items = conf.items()
 
-        self.assertEqual(saved_items, [tuple(map(str.encode, item)) for item in items])
+        self.assertEqual(saved_items, items)
 
     def test_get_keys(self):
         keys = [
-            '/my/service/param1',
-            '/my/service/param2',
-            '/my/service/param3'
+            b'/my/service/param1',
+            b'/my/service/param2',
+            b'/my/service/param3'
         ]
 
         for key in keys:
@@ -80,23 +92,23 @@ class ReadConfig(unittest.TestCase):
         conf = Config.read(self.cdb_filename, reload=False)
         saved_keys = conf.keys()
 
-        self.assertEqual(saved_keys, [key.encode() for key in keys])
+        self.assertEqual(saved_keys, keys)
 
     def test_contains(self):
-        key = '/my/service/param1'
+        key = b'/my/service/param1'
 
         self.writer.put(key)
         self.finalize_cdb()
 
         conf = Config.read(self.cdb_filename, reload=False)
         self.assertIn(key, conf)
-        self.assertNotIn('nonexistent_key', conf)
+        self.assertNotIn(b'nonexistent_key', conf)
 
     def test_reload(self):
         key, init_value, new_value = 'key', 'value', 'new_value'
 
         # put init value
-        self.writer.put(key, f's{init_value}')
+        self.writer.put(key.encode(), f's{init_value}'.encode())
         self.finalize_cdb()
 
         conf = Config.read(self.cdb_filename, reload_interval=1)
@@ -104,7 +116,7 @@ class ReadConfig(unittest.TestCase):
         # put new value
         with open(self.cdb_filename, 'wb') as f:
             writer = self.cdb_writer(f)
-            writer.put(key, f's{new_value}')
+            writer.put(key.encode(), f's{new_value}'.encode())
             writer.finalize()
 
         self.assertEqual(conf.get(key), init_value)
@@ -137,7 +149,8 @@ class ConvertYamlToCdb(unittest.TestCase):
                     },
                     'pool_size': 10
                 },
-                'float': 5.35
+                'float': 5.35,
+                'unicode': 'привет'
             }
         }
 
@@ -153,6 +166,7 @@ class ConvertYamlToCdb(unittest.TestCase):
         self.assertEqual(cdb_conf.get('/service/db/connection/port'), '5432')
         self.assertEqual(cdb_conf.get('/service/db/pool_size'), '10')
         self.assertEqual(cdb_conf.get('/service/float'), '5.35')
+        self.assertEqual(cdb_conf.get('/service/unicode'), 'привет')
 
 
 if __name__ == '__main__':

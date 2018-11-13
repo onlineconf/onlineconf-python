@@ -29,7 +29,7 @@ class Config:
         return _config
 
     def get(self, key: str) -> Union[str, dict]:
-        return self._get(key)
+        return self._get(key.encode())
 
     def __getitem__(self, key: str) -> Union[str, dict]:
         return self._get(key)
@@ -71,8 +71,8 @@ class Config:
 
         with open(self._filename, 'wb') as f:
             writer = cdblib.Writer(f)
-            for item in cdb_items:
-                writer.put(*item)
+            for k, v in cdb_items:
+                writer.put(k.encode(), v.encode())
             writer.finalize()
 
     @staticmethod
@@ -98,8 +98,7 @@ class Config:
             else:
                 try:
                     json.loads(value)
-                except (TypeError, json.decoder.JSONDecodeError) as exc:
+                except (TypeError, json.decoder.JSONDecodeError):
                     yield _path, f's{value}'
                 else:
                     yield _path, f'j{value}'
-
