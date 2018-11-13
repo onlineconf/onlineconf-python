@@ -36,7 +36,7 @@ class Config:
 
     def _get(self, key: str) -> Union[str, dict]:
         """Get value by key and convert it to corresponding type"""
-        binary_value = self.cdb.get(key)
+        binary_value = self.cdb.get(key.encode())
         return self._cast_value(binary_value)
 
     def __contains__(self, key):
