@@ -29,7 +29,7 @@ class Config:
         return _config
 
     def get(self, key: str) -> Union[str, dict]:
-        return self._get(key.encode())
+        return self._get(key)
 
     def __getitem__(self, key: str) -> Union[str, dict]:
         return self._get(key)
