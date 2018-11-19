@@ -1,5 +1,6 @@
 import asyncio
 import json
+from contextlib import suppress
 from typing import Union, List, Tuple, Iterator
 
 import aiofiles as aiofiles
@@ -17,7 +18,7 @@ class Config:
         self._loop = loop if loop else asyncio.get_event_loop()
 
     @classmethod
-    def read(cls, filename: str, reload: bool = True, reload_interval: int = None):
+    def read(cls, filename: str, reload: bool = True, reload_interval: int = 30):
         """Read a cdb file and schedule periodic reload if needed"""
         _config = cls(filename, reload_interval)
 
@@ -75,8 +76,15 @@ class Config:
                 writer.put(k.encode(), v.encode())
             writer.finalize()
 
+    def shutdown(self):
+        tasks = asyncio.all_tasks(self._loop)
+        for task in tasks:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                self._loop.run_until_complete(task)
+
     @staticmethod
-    def _cast_value(value: str) -> Union[str, dict]:
+    def _cast_value(value: bytes) -> Union[str, dict]:
         # Decode bytes to unicode
         value = value.decode()
         prefix = value[:1]
