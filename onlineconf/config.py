@@ -27,7 +27,7 @@ class Config:
             _config.cdb = cdblib.Reader(f.read())
 
         if reload:
-            cls._reload_task = _config._loop.create_task(_config._schedule_reload())
+            _config._reload_task = _config._loop.create_task(_config._schedule_reload())
         return _config
 
     def get(self, key: str) -> Union[str, dict]:
