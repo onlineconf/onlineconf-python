@@ -15,6 +15,7 @@ class Config:
     def __init__(self, filename: str, reload_interval=30, loop=None):
         self._filename = filename
         self._reload_interval = reload_interval
+        self._reload_task = None
         self._loop = loop if loop else asyncio.get_event_loop()
 
     @classmethod
@@ -26,7 +27,7 @@ class Config:
             _config.cdb = cdblib.Reader(f.read())
 
         if reload:
-            _config._loop.create_task(_config._schedule_reload())
+            cls._reload_task = _config._loop.create_task(_config._schedule_reload())
         return _config
 
     def get(self, key: str) -> Union[str, dict]:
@@ -76,12 +77,11 @@ class Config:
                 writer.put(k.encode(), v.encode())
             writer.finalize()
 
-    def shutdown(self):
-        tasks = asyncio.all_tasks(self._loop)
-        for task in tasks:
-            task.cancel()
+    async def shutdown(self):
+        if self._reload_task:
+            self._reload_task.cancel()
             with suppress(asyncio.CancelledError):
-                self._loop.run_until_complete(task)
+                await self._reload_task
 
     @staticmethod
     def _cast_value(value: bytes) -> Union[str, dict]:
