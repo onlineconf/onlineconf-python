@@ -67,7 +67,7 @@ class Config:
     def fill_from_yaml(self, filename: str):
         """Read yaml file, convert parameters and save them to cdb file"""
         with open(filename) as f:
-            conf = yaml.load(f.read())
+            conf = yaml.full_load(f.read())
 
         cdb_items = self._flatten_dict(conf)
 
