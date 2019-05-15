@@ -140,22 +140,20 @@ class ConvertYamlToCdb(unittest.TestCase):
         os.remove(self.yaml_filename)
 
     def test_fill_cdb_with_yaml(self):
-        conf = {
-            'service': {
-                'db': {
-                    'connection': {
-                        'host': 'localhost',
-                        'port': 5432
-                    },
-                    'pool_size': 10
-                },
-                'float': 5.35,
-                'unicode': 'привет'
-            }
-        }
+        _yaml = """
+            service: 
+              db: 
+                connection: 
+                  host: localhost
+                  port: 5432
+                pool_size: 10
+              float: 5.35
+              unicode: привет
+              list: >
+                [1, 2, 3, 4, 5]"""
 
         with open(self.yaml_filename, 'w') as f:
-            f.write(yaml.dump(conf))
+            f.write(_yaml)
 
         conf = Config(self.cdb_filename)
         conf.fill_from_yaml(self.yaml_filename)
@@ -167,6 +165,7 @@ class ConvertYamlToCdb(unittest.TestCase):
         self.assertEqual(cdb_conf.get('/service/db/pool_size'), '10')
         self.assertEqual(cdb_conf.get('/service/float'), '5.35')
         self.assertEqual(cdb_conf.get('/service/unicode'), 'привет')
+        self.assertEqual(cdb_conf.get('/service/list'), [1, 2, 3, 4, 5])
 
 
 if __name__ == '__main__':
