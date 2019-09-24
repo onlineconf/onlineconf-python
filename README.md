@@ -45,8 +45,8 @@ service:
       string: string_value
       integer: 100 # returned as string
       float: 1.25 # returned as string
-  json_list: >
-    [first_value, second_value] # returned as python list
+  json_list: > # returned as python list
+    [first_value, second_value]
   json: > # returned as python dict
     {
       "param": "value"
