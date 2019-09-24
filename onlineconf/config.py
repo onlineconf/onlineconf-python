@@ -1,9 +1,9 @@
 import asyncio
 import json
 from contextlib import suppress
-from typing import Union, List, Tuple, Iterator
+from typing import Union, List, Tuple, Iterator, Optional
 
-import aiofiles as aiofiles
+import aiofiles
 import cdblib
 import yaml
 
@@ -12,21 +12,21 @@ __all__ = ('Config',)
 
 class Config:
 
-    def __init__(self, filename: str, reload_interval=30, loop=None):
+    def __init__(self, filename: str, reload_interval: Optional[int] = None, loop=None) -> None:
         self._filename = filename
         self._reload_interval = reload_interval
         self._reload_task = None
         self._loop = loop if loop else asyncio.get_event_loop()
 
     @classmethod
-    def read(cls, filename: str, reload: bool = True, reload_interval: int = 30):
+    def read(cls, filename: str, reload_interval: Optional[int] = 30) -> "Config":
         """Read a cdb file and schedule periodic reload if needed"""
         _config = cls(filename, reload_interval)
 
         with open(_config._filename, 'rb') as f:
             _config.cdb = cdblib.Reader(f.read())
 
-        if reload:
+        if reload_interval:
             _config._reload_task = _config._loop.create_task(_config._schedule_reload())
         return _config
 
@@ -39,6 +39,8 @@ class Config:
     def _get(self, key: str) -> Union[str, dict]:
         """Get value by key and convert it to corresponding type"""
         binary_value = self.cdb.get(key.encode())
+        if binary_value is None:
+            raise KeyError(f'Key `{key}` is not found in config')
         return self._cast_value(binary_value)
 
     def __contains__(self, key):
