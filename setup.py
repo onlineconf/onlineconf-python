@@ -2,9 +2,9 @@ from setuptools import setup
 
 setup(
     name='onlineconf',
-    version='0.0.7',
-    url='https://gitlab.corp.mail.ru/myspb/common/onlineconf',
-    author='mail.ru',
+    version='0.0.8',
+    url='https://github.com/onlineconf/onlineconf-python',
+    author='Mail.Ru Group',
     packages=['onlineconf'],
     entry_points={
         'console_scripts': ['fill_config=onlineconf.cli:main'],
