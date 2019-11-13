@@ -5,7 +5,6 @@ import tempfile
 import json
 
 import cdblib
-import yaml
 
 from onlineconf import Config
 
@@ -149,9 +148,9 @@ class ConvertYamlToCdb(unittest.TestCase):
 
     def test_fill_cdb_with_yaml(self):
         _yaml = """
-            service: 
-              db: 
-                connection: 
+            service:
+              db:
+                connection:
                   host: localhost
                   port: 5432
                 pool_size: 10
