@@ -105,6 +105,8 @@ class Config:
             _path = '/'.join((path, key))
             if isinstance(value, dict):
                 yield from self._flatten_dict(value, _path)
+            elif isinstance(value, list):
+                yield _path, f'j{json.dumps(value)}'
             else:
                 try:
                     json.loads(value)

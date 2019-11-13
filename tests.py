@@ -157,8 +157,7 @@ class ConvertYamlToCdb(unittest.TestCase):
                 pool_size: 10
               float: 5.35
               unicode: привет
-              list: >
-                [1, 2, 3, 4, 5]"""
+              list: [1, 2, 3, 4, string]"""
 
         with open(self.yaml_filename, 'w') as f:
             f.write(_yaml)
@@ -173,7 +172,7 @@ class ConvertYamlToCdb(unittest.TestCase):
         self.assertEqual(cdb_conf.get('/service/db/pool_size'), '10')
         self.assertEqual(cdb_conf.get('/service/float'), '5.35')
         self.assertEqual(cdb_conf.get('/service/unicode'), 'привет')
-        self.assertEqual(cdb_conf.get('/service/list'), [1, 2, 3, 4, 5])
+        self.assertEqual(cdb_conf.get('/service/list'), [1, 2, 3, 4, 'string'])
 
 
 if __name__ == '__main__':
