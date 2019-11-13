@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='onlineconf',
-    version='0.0.8',
+    version='0.0.9',
     url='https://github.com/onlineconf/onlineconf-python',
     author='Mail.Ru Group',
     packages=['onlineconf'],
