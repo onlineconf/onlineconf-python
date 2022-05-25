@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.7
+  python: python3
 
 repos:
   - repo: https://github.com/PyCQA/autoflake
@@ -34,5 +34,4 @@ repos:
           - --config-file=mypy.ini
         additional_dependencies:
           - --index-url=https://devpi.my.cloud.devmail.ru/developer/dev
-          - attrs
-          - types-orjson
+          - types-aiofiles
