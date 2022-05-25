@@ -33,5 +33,5 @@ repos:
         args:
           - --config-file=mypy.ini
         additional_dependencies:
-          - --index-url=https://devpi.my.cloud.devmail.ru/developer/dev
           - types-aiofiles
+          - types-PyYAML
