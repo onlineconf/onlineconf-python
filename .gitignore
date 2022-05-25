@@ -1,7 +1,23 @@
-__pycache__/
-env/
 .idea/
+__pycache__/
+*.py[cod]
+.cache/
+.vscode/
+.history/
+.pytest_cache/
+.http-prompt
+builds/
+*.swp
+.DS_Store
+.env
+venv/
+env/
+docs/api.json
+functests/output/
+*.egg-info/
+.mypy_cache/
 build/
 dist/
-*.egg-info/
 
+config.cdb
+*.rpm

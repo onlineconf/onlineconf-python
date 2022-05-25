@@ -1,4 +1,5 @@
 import asyncio
+from typing import TYPE_CHECKING, Optional
 import json
 from contextlib import suppress
 from typing import Union, List, Tuple, Iterator, Optional
@@ -7,23 +8,39 @@ import aiofiles
 import cdblib
 import yaml
 
-__all__ = ('Config',)
+from onlineconf.util import get_event_loop
+
+if TYPE_CHECKING:
+    from asyncio import AbstractEventLoop
+
+
+__all__ = ("Config",)
 
 
 class Config:
 
-    def __init__(self, filename: str, reload_interval: Optional[int] = None, loop=None) -> None:
+    def __init__(
+        self,
+        filename: str,
+        reload_interval: Optional[int] = None,
+        loop: Optional["AbstractEventLoop"]=None
+        ) -> None:
         self._filename = filename
         self._reload_interval = reload_interval
         self._reload_task = None
-        self._loop = loop if loop else asyncio.get_event_loop()
+        self._loop = loop if loop else get_event_loop()
 
     @classmethod
-    def read(cls, filename: str, reload_interval: Optional[int] = 30) -> "Config":
+    def read(
+        cls,
+        filename: str,
+        reload_interval: Optional[int] = 30,
+        loop: Optional["AbstractEventLoop"]=None
+        ) -> "Config":
         """Read a cdb file and schedule periodic reload if needed"""
-        _config = cls(filename, reload_interval)
+        _config = cls(filename=filename, reload_interval=reload_interval, loop=loop)
 
-        with open(_config._filename, 'rb') as f:
+        with open(_config._filename, "rb") as f:
             _config.cdb = cdblib.Reader(f.read())
 
         if reload_interval:
@@ -40,7 +57,7 @@ class Config:
         """Get value by key and convert it to corresponding type"""
         binary_value = self.cdb.get(key.encode())
         if binary_value is None:
-            raise KeyError(f'Key `{key}` is not found in config')
+            raise KeyError(f"Key `{key}` is not found in config")
         return self._cast_value(binary_value)
 
     def __contains__(self, key):
@@ -61,7 +78,7 @@ class Config:
 
     async def _schedule_reload(self):
         while True:
-            async with aiofiles.open(self._filename, 'rb') as f:
+            async with aiofiles.open(self._filename, "rb") as f:
                 _config = await f.read()
             self.cdb = cdblib.Reader(_config)
             await asyncio.sleep(self._reload_interval)
@@ -73,7 +90,7 @@ class Config:
 
         cdb_items = self._flatten_dict(conf)
 
-        with open(self._filename, 'wb') as f:
+        with open(self._filename, "wb") as f:
             writer = cdblib.Writer(f)
             for k, v in cdb_items:
                 writer.put(k.encode(), v.encode())
@@ -92,25 +109,25 @@ class Config:
         prefix = value[:1]
         value = value[1:]
 
-        if prefix == 's':
+        if prefix == "s":
             return value
-        elif prefix == 'j':
+        elif prefix == "j":
             return json.loads(value)
         else:
             raise ValueError
 
-    def _flatten_dict(self, d: dict, path: str = '') -> Iterator[Tuple[str, str]]:
+    def _flatten_dict(self, d: dict, path: str = "") -> Iterator[Tuple[str, str]]:
         """Return dict items as tuples: (xpath-like key, value)"""
         for key, value in d.items():
-            _path = '/'.join((path, key))
+            _path = "/".join((path, key))
             if isinstance(value, dict):
                 yield from self._flatten_dict(value, _path)
             elif isinstance(value, list):
-                yield _path, f'j{json.dumps(value)}'
+                yield _path, f"j{json.dumps(value)}"
             else:
                 try:
                     json.loads(value)
                 except (TypeError, json.decoder.JSONDecodeError):
-                    yield _path, f's{value}'
+                    yield _path, f"s{value}"
                 else:
-                    yield _path, f'j{value}'
+                    yield _path, f"j{value}"
