@@ -11,9 +11,5 @@ setup(
     entry_points={
         "console_scripts": ["fill_config=onlineconf.cli:main"],
     },
-    install_requires=[
-        "pure-cdb>=2.2.0",
-        "aiofiles>=0.4.0",
-        "PyYAML>=5.1"
-    ]
+    install_requires=["pure-cdb>=2.2.0", "aiofiles>=0.4.0", "PyYAML>=5.1"],
 )

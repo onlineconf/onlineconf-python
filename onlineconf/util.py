@@ -7,8 +7,9 @@ if TYPE_CHECKING:
 
 __all__ = ("get_event_loop",)
 
+
 def get_event_loop() -> "AbstractEventLoop":
-    if sys.version_info < (3,7):
+    if sys.version_info < (3, 7):
         return asyncio.get_event_loop()
     try:
         loop = asyncio.get_running_loop()
