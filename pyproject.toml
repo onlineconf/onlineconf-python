@@ -1,0 +1,8 @@
+[tool.pyright]
+typeCheckingMode = "basic"
+strict = ["onlineconf"]
+exclude = ["venv"]
+ignore = ["venv"]
+
+[tool.mypy]
+include = ["tests"]

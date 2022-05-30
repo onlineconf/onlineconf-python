@@ -1,49 +1,62 @@
 import asyncio
 import json
 from contextlib import suppress
-from typing import Union, List, Tuple, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import aiofiles
 import cdblib
 import yaml
 
-__all__ = ('Config',)
+if TYPE_CHECKING:
+    from asyncio import AbstractEventLoop
+
+
+__all__ = ("Config",)
 
 
 class Config:
-
-    def __init__(self, filename: str, reload_interval: Optional[int] = None, loop=None) -> None:
+    def __init__(
+        self,
+        filename: str,
+        reload_interval: Optional[int] = None,
+        loop: Optional["AbstractEventLoop"] = None,
+    ) -> None:
         self._filename = filename
         self._reload_interval = reload_interval
-        self._reload_task = None
-        self._loop = loop if loop else asyncio.get_event_loop()
+        self._reload_task: Optional[asyncio.Task[None]] = None
+        self._loop = loop if loop else asyncio.get_running_loop()
 
     @classmethod
-    def read(cls, filename: str, reload_interval: Optional[int] = 30) -> "Config":
+    def read(
+        cls,
+        filename: str,
+        reload_interval: Optional[int] = 30,
+        loop: Optional["AbstractEventLoop"] = None,
+    ) -> "Config":
         """Read a cdb file and schedule periodic reload if needed"""
-        _config = cls(filename, reload_interval)
+        _config = cls(filename=filename, reload_interval=reload_interval, loop=loop)
 
-        with open(_config._filename, 'rb') as f:
+        with open(_config._filename, "rb") as f:
             _config.cdb = cdblib.Reader(f.read())
 
         if reload_interval:
             _config._reload_task = _config._loop.create_task(_config._schedule_reload())
         return _config
 
-    def get(self, key: str) -> Union[str, dict]:
+    def get(self, key: str) -> Union[str, Dict[str, Any]]:
         return self._get(key)
 
-    def __getitem__(self, key: str) -> Union[str, dict]:
+    def __getitem__(self, key: str) -> Union[str, Dict[str, Any]]:
         return self._get(key)
 
-    def _get(self, key: str) -> Union[str, dict]:
+    def _get(self, key: str) -> Union[str, Dict[str, Any]]:
         """Get value by key and convert it to corresponding type"""
         binary_value = self.cdb.get(key.encode())
         if binary_value is None:
-            raise KeyError(f'Key `{key}` is not found in config')
+            raise KeyError(f"Key `{key}` is not found in config")
         return self._cast_value(binary_value)
 
-    def __contains__(self, key):
+    def __contains__(self, key: str):
         """Return True if key exists in the config"""
         return key in self.cdb
 
@@ -60,8 +73,11 @@ class Config:
         return self.cdb.values()
 
     async def _schedule_reload(self):
+        if self._reload_interval is None:
+            raise RuntimeError("'reload_interval' must be defined")
+
         while True:
-            async with aiofiles.open(self._filename, 'rb') as f:
+            async with aiofiles.open(self._filename, "rb") as f:
                 _config = await f.read()
             self.cdb = cdblib.Reader(_config)
             await asyncio.sleep(self._reload_interval)
@@ -73,7 +89,7 @@ class Config:
 
         cdb_items = self._flatten_dict(conf)
 
-        with open(self._filename, 'wb') as f:
+        with open(self._filename, "wb") as f:
             writer = cdblib.Writer(f)
             for k, v in cdb_items:
                 writer.put(k.encode(), v.encode())
@@ -86,31 +102,33 @@ class Config:
                 await self._reload_task
 
     @staticmethod
-    def _cast_value(value: bytes) -> Union[str, dict]:
+    def _cast_value(value: bytes) -> Union[str, Dict[str, Any]]:
         # Decode bytes to unicode
-        value = value.decode()
-        prefix = value[:1]
-        value = value[1:]
+        decoded_value = value.decode()
+        prefix = decoded_value[:1]
+        decoded_value = decoded_value[1:]
 
-        if prefix == 's':
-            return value
-        elif prefix == 'j':
-            return json.loads(value)
+        if prefix == "s":
+            return decoded_value
+        elif prefix == "j":
+            return json.loads(decoded_value)
         else:
             raise ValueError
 
-    def _flatten_dict(self, d: dict, path: str = '') -> Iterator[Tuple[str, str]]:
+    def _flatten_dict(
+        self, d: Dict[str, Any], path: str = ""
+    ) -> Iterator[Tuple[str, str]]:
         """Return dict items as tuples: (xpath-like key, value)"""
         for key, value in d.items():
-            _path = '/'.join((path, key))
+            _path = "/".join((path, key))
             if isinstance(value, dict):
                 yield from self._flatten_dict(value, _path)
             elif isinstance(value, list):
-                yield _path, f'j{json.dumps(value)}'
+                yield _path, f"j{json.dumps(value)}"
             else:
                 try:
                     json.loads(value)
                 except (TypeError, json.decoder.JSONDecodeError):
-                    yield _path, f's{value}'
+                    yield _path, f"s{value}"
                 else:
-                    yield _path, f'j{value}'
+                    yield _path, f"j{value}"

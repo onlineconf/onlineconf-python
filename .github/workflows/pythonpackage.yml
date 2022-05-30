@@ -1,22 +1,27 @@
 name: onlineconf
 
-on: [push]
+on:
+  push:
+    branches:
+      - "master"
+    tags: ["*"]
+  pull_request:
+    branches:
+      - "master"
 
 jobs:
-  build:
-
+  lint:
+    name: Linter
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup Python 3.7
+      uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python setup.py install
@@ -25,8 +30,35 @@ jobs:
         pip install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with unittest
+        # exit-zero treats all errors as warnings. The GitHub editor is 120 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+    - name: Type check with mypy
       run: |
-        python -m unittest
+        pip install mypy
+        pip install types-aiofiles
+        pip install types-PyYAML
+        mypy onlineconf
+
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+      fail-fast: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python setup.py install
+      - name: Run tests
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m unittest
