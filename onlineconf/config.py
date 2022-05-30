@@ -104,14 +104,14 @@ class Config:
     @staticmethod
     def _cast_value(value: bytes) -> Union[str, Dict[str, Any]]:
         # Decode bytes to unicode
-        value_decode = value.decode()
-        prefix = value_decode[:1]
-        value_decode = value_decode[1:]
+        decoded_value = value.decode()
+        prefix = decoded_value[:1]
+        decoded_value = decoded_value[1:]
 
         if prefix == "s":
-            return value_decode
+            return decoded_value
         elif prefix == "j":
-            return json.loads(value_decode)
+            return json.loads(decoded_value)
         else:
             raise ValueError
 
