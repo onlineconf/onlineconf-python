@@ -7,6 +7,7 @@ import unittest
 import cdblib
 
 from onlineconf import Config
+from onlineconf.util import get_event_loop
 
 
 class ReadConfig(unittest.TestCase):
@@ -16,10 +17,12 @@ class ReadConfig(unittest.TestCase):
         _, self.cdb_filename = tempfile.mkstemp()
         self.fp = open(self.cdb_filename, "wb")
         self.writer = self.cdb_writer(self.fp)
+        self.loop = get_event_loop()
 
     def tearDown(self):
         self.fp.close()
         os.remove(self.cdb_filename)
+        self.loop.close()
 
     def finalize_cdb(self):
         self.writer.finalize()
@@ -31,7 +34,7 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key.encode(), f"s{value}".encode())
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, str)
@@ -43,7 +46,7 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key.encode(), f"j{json.dumps(value)}".encode())
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, dict)
@@ -55,7 +58,7 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key.encode(), f"j{json.dumps(value)}".encode())
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, dict)
@@ -72,7 +75,7 @@ class ReadConfig(unittest.TestCase):
             self.writer.put(*item)
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
         saved_items = conf.items()
 
         self.assertEqual(saved_items, items)
@@ -84,7 +87,7 @@ class ReadConfig(unittest.TestCase):
             self.writer.put(key)
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
         saved_keys = conf.keys()
 
         self.assertEqual(saved_keys, keys)
@@ -95,7 +98,7 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key)
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
         self.assertIn(key, conf)  # type: ignore
         self.assertNotIn(b"nonexistent_key", conf)  # type: ignore
 
@@ -106,8 +109,9 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key.encode(), f"s{init_value}".encode())
         self.finalize_cdb()
 
-        loop = asyncio.new_event_loop()
-        conf = Config.read(filename=self.cdb_filename, reload_interval=1, loop=loop)
+        conf = Config.read(
+            filename=self.cdb_filename, reload_interval=1, loop=self.loop
+        )
 
         # put new value
         with open(self.cdb_filename, "wb") as f:
@@ -118,14 +122,15 @@ class ReadConfig(unittest.TestCase):
         self.assertEqual(conf.get(key), init_value)
 
         # wait until config file reloaded
-        loop.run_until_complete(asyncio.sleep(conf._reload_interval + 1))  # type: ignore
+        self.loop.run_until_complete(asyncio.sleep(conf._reload_interval + 1))  # type: ignore
+        self.loop.run_until_complete(conf.shutdown())
 
         self.assertEqual(conf.get(key), new_value)
 
     def test_key_not_found(self):
         self.finalize_cdb()
 
-        conf = Config.read(self.cdb_filename, reload_interval=None)
+        conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
 
         with self.assertRaises(KeyError):
             conf.get("/missing_key")
@@ -137,10 +142,12 @@ class ConvertYamlToCdb(unittest.TestCase):
     def setUp(self):
         _, self.cdb_filename = tempfile.mkstemp()
         _, self.yaml_filename = tempfile.mkstemp()
+        self.loop = get_event_loop()
 
     def tearDown(self):
         os.remove(self.cdb_filename)
         os.remove(self.yaml_filename)
+        self.loop.close()
 
     def test_fill_cdb_with_yaml(self):
         _yaml = """
@@ -157,10 +164,10 @@ class ConvertYamlToCdb(unittest.TestCase):
         with open(self.yaml_filename, "w") as f:
             f.write(_yaml)
 
-        conf = Config(self.cdb_filename)
+        conf = Config(self.cdb_filename, loop=self.loop)
         conf.fill_from_yaml(self.yaml_filename)
 
-        cdb_conf = Config.read(self.cdb_filename, reload_interval=None)
+        cdb_conf = Config.read(self.cdb_filename, reload_interval=None, loop=self.loop)
 
         self.assertEqual(cdb_conf.get("/service/db/connection/host"), "localhost")
         self.assertEqual(cdb_conf.get("/service/db/connection/port"), "5432")

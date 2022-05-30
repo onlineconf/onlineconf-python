@@ -35,7 +35,9 @@ jobs:
     - name: Type check with mypy
       run: |
         pip install mypy
-        mypy
+        pip install types-aiofiles
+        pip install types-PyYAML
+        mypy onlineconf
 
   test:
     name: Test
