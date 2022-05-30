@@ -7,8 +7,6 @@ import aiofiles
 import cdblib
 import yaml
 
-from onlineconf.util import get_event_loop
-
 if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
 
@@ -26,7 +24,7 @@ class Config:
         self._filename = filename
         self._reload_interval = reload_interval
         self._reload_task: Optional[asyncio.Task[None]] = None
-        self._loop = loop if loop else get_event_loop()
+        self._loop = loop if loop else asyncio.get_running_loop()
 
     @classmethod
     def read(
