@@ -7,7 +7,6 @@ import unittest
 import cdblib
 
 from onlineconf import Config
-from onlineconf.util import get_event_loop
 
 
 class ReadConfig(unittest.TestCase):
@@ -107,7 +106,7 @@ class ReadConfig(unittest.TestCase):
         self.writer.put(key.encode(), f"s{init_value}".encode())
         self.finalize_cdb()
 
-        loop = get_event_loop()
+        loop = asyncio.new_event_loop()
         conf = Config.read(filename=self.cdb_filename, reload_interval=1, loop=loop)
 
         # put new value
