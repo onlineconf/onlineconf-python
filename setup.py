@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
-from onlineconf import __version__ as version
+__version__ = "0.1.0"
 
 setup(
     name="onlineconf",
-    version=version,
+    version=__version__,
     url="https://github.com/onlineconf/onlineconf-python",
     author="VK Group",
     packages=find_packages(),
