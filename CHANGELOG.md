@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.0.1]
+### Added
+- Add `get_event_loop`
+
+
 ## [1.0.0]
 ### Added
 - Support Python 3.9, 3.10
@@ -27,6 +32,7 @@ Implementation of following methods:
     - fill_from_yaml
     - shutdown
 
-[Unreleased]: https://github.com/onlineconf/onlineconf-python/compare/master...1.0.0
+[Unreleased]: https://github.com/onlineconf/onlineconf-python/compare/master...1.0.1
+[1.0.1]: https://github.com/onlineconf/onlineconf-python/compare/v1.0.1...v1.0.0
 [1.0.0]: https://github.com/onlineconf/onlineconf-python/compare/v1.0.0...v0.1.0
 [0.1.0]: https://github.com/onlineconf/onlineconf-python/compare/v0.1.0

@@ -7,6 +7,7 @@ import unittest
 import cdblib
 
 from onlineconf import Config
+from onlineconf.util import get_event_loop
 
 
 class ReadConfig(unittest.TestCase):
@@ -16,7 +17,7 @@ class ReadConfig(unittest.TestCase):
         _, self.cdb_filename = tempfile.mkstemp()
         self.fp = open(self.cdb_filename, "wb")
         self.writer = self.cdb_writer(self.fp)
-        self.loop = asyncio.new_event_loop()
+        self.loop = get_event_loop()
 
     def tearDown(self):
         self.fp.close()
@@ -141,7 +142,7 @@ class ConvertYamlToCdb(unittest.TestCase):
     def setUp(self):
         _, self.cdb_filename = tempfile.mkstemp()
         _, self.yaml_filename = tempfile.mkstemp()
-        self.loop = asyncio.new_event_loop()
+        self.loop = get_event_loop()
 
     def tearDown(self):
         os.remove(self.cdb_filename)
