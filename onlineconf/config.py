@@ -141,5 +141,3 @@ class Config:
             if exc:
                 context = {"exception": exc}
                 loop.call_exception_handler(context)
-        finally:
-            self._connect_task = None
