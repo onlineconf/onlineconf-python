@@ -31,7 +31,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
         self.writer.put(key.encode(), f"s{value}".encode())
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, str)
@@ -43,7 +43,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
         self.writer.put(key.encode(), f"j{json.dumps(value)}".encode())
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, dict)
@@ -55,7 +55,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
         self.writer.put(key.encode(), f"j{json.dumps(value)}".encode())
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
 
         saved_value = conf.get(key)
         self.assertIsInstance(saved_value, dict)
@@ -72,7 +72,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
             self.writer.put(*item)
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
         saved_items = conf.items()
 
         self.assertEqual(saved_items, items)
@@ -84,7 +84,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
             self.writer.put(key)
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
         saved_keys = conf.keys()
 
         self.assertEqual(saved_keys, keys)
@@ -95,7 +95,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
         self.writer.put(key)
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
         self.assertIn(key, conf)  # type: ignore
         self.assertNotIn(b"nonexistent_key", conf)  # type: ignore
 
@@ -117,8 +117,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(conf.get(key), init_value)
 
         # wait until config file reloaded
-        if conf._reload_interval:
-            await asyncio.sleep(conf._reload_interval + 1)
+        await asyncio.sleep(conf._reload_interval + 1)
         await conf.shutdown()
 
         self.assertEqual(conf.get(key), new_value)
@@ -126,7 +125,7 @@ class ReadConfig(unittest.IsolatedAsyncioTestCase):
     async def test_key_not_found(self):
         self.finalize_cdb()
 
-        conf = await Config.read(self.cdb_filename, reload_interval=None)
+        conf = await Config.read(self.cdb_filename)
 
         with self.assertRaises(KeyError):
             conf.get("/missing_key")
@@ -161,7 +160,7 @@ class ConvertYamlToCdb(unittest.IsolatedAsyncioTestCase):
         conf = Config(self.cdb_filename)
         conf.fill_from_yaml(self.yaml_filename)
 
-        cdb_conf = await Config.read(self.cdb_filename, reload_interval=None)
+        cdb_conf = await Config.read(self.cdb_filename)
 
         self.assertEqual(cdb_conf.get("/service/db/connection/host"), "localhost")
         self.assertEqual(cdb_conf.get("/service/db/connection/port"), "5432")

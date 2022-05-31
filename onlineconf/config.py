@@ -18,7 +18,7 @@ class Config:
     def __init__(
         self,
         filename: str,
-        reload_interval: Optional[int] = None,
+        reload_interval: int = 0,
     ) -> None:
         self._filename = filename
         self._reload_interval = reload_interval
@@ -28,7 +28,7 @@ class Config:
     async def read(
         cls,
         filename: str,
-        reload_interval: Optional[int] = 30,
+        reload_interval: int = 0,
     ) -> "Config":
         """Read a cdb file and schedule periodic reload if needed"""
         _config = cls(filename=filename, reload_interval=reload_interval)
