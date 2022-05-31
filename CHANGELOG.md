@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ## [1.0.1]
-### Added
-- Add `get_event_loop`
+### Changed
+- `Config.read` now asynchronous
+- Updated tests to asynchronous
+- Remove Python3.7 support
 
 
 ## [1.0.0]

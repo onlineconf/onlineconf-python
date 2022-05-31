@@ -38,7 +38,7 @@ class Config:
 
         if reload_interval:
             _config._reload_task = asyncio.create_task(_config._schedule_reload())
-            _config._reload_task.add_done_callback(_config._connect_done_callback)
+            _config._reload_task.add_done_callback(_config._reload_done_callback)
         return _config
 
     def get(self, key: str) -> Union[str, Dict[str, Any]]:
@@ -131,7 +131,8 @@ class Config:
                 else:
                     yield _path, f"j{value}"
 
-    def _connect_done_callback(self, task: "Task[Any]"):
+    @staticmethod
+    def _reload_done_callback(task: "Task[Any]"):
         loop = asyncio.get_running_loop()
         try:
             exc = task.exception()
