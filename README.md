@@ -22,7 +22,7 @@ import asyncio
 from onlineconf import Config
 
 async def main():
-    config = Config.read(filename='config.cdb', reload_interval=30)
+    config = await Config.read(filename='config.cdb', reload_interval=30)
     value = config.get('/service/param_name')
     print(value)
 
