@@ -7,10 +7,8 @@ import aiofiles
 import cdblib
 import yaml
 
-from onlineconf.util import get_event_loop
-
 if TYPE_CHECKING:
-    from asyncio import AbstractEventLoop
+    from asyncio import Task
 
 
 __all__ = ("Config",)
@@ -21,28 +19,26 @@ class Config:
         self,
         filename: str,
         reload_interval: Optional[int] = None,
-        loop: Optional["AbstractEventLoop"] = None,
     ) -> None:
         self._filename = filename
         self._reload_interval = reload_interval
         self._reload_task: Optional[asyncio.Task[None]] = None
-        self._loop = loop if loop else get_event_loop()
 
     @classmethod
-    def read(
+    async def read(
         cls,
         filename: str,
         reload_interval: Optional[int] = 30,
-        loop: Optional["AbstractEventLoop"] = None,
     ) -> "Config":
         """Read a cdb file and schedule periodic reload if needed"""
-        _config = cls(filename=filename, reload_interval=reload_interval, loop=loop)
+        _config = cls(filename=filename, reload_interval=reload_interval)
 
         with open(_config._filename, "rb") as f:
             _config.cdb = cdblib.Reader(f.read())
 
         if reload_interval:
-            _config._reload_task = _config._loop.create_task(_config._schedule_reload())
+            _config._reload_task = asyncio.create_task(_config._schedule_reload())
+            _config._reload_task.add_done_callback(_config._connect_done_callback)
         return _config
 
     def get(self, key: str) -> Union[str, Dict[str, Any]]:
@@ -134,3 +130,16 @@ class Config:
                     yield _path, f"s{value}"
                 else:
                     yield _path, f"j{value}"
+
+    def _connect_done_callback(self, task: "Task[Any]"):
+        loop = asyncio.get_running_loop()
+        try:
+            exc = task.exception()
+        except asyncio.CancelledError:
+            pass
+        else:
+            if exc:
+                context = {"exception": exc}
+                loop.call_exception_handler(context)
+        finally:
+            self._connect_task = None
